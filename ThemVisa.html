@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Visa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Sử dụng TinyMCE thông qua CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mx-auto">
+            <h1 class="text-2xl font-bold text-center text-blue-800 mb-6">Quản Lý Danh Sách Visa</h1>
+            
+            <div id="loading" class="text-center py-10">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                <p class="mt-2 text-gray-600">Đang tải dữ liệu...</p>
+            </div>
+            
+            <!-- Nút thêm mới -->
+            <div id="addButtonContainer" class="mb-6 hidden">
+                <button id="addVisaButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                    + Thêm Visa mới
+                </button>
+            </div>
+            
+            <!-- Danh sách Visa -->
+            <div id="visaList" class="hidden">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Danh sách Visa</h2>
+                <div id="visaTable" class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="py-2 px-4 border-b text-left">ID Visa</th>
+                                <th class="py-2 px-4 border-b text-left">Tên Visa</th>
+                                <th class="py-2 px-4 border-b text-left">Loại Visa</th>
+                                <th class="py-2 px-4 border-b text-left">Nước Du Học</th>
+                                <th class="py-2 px-4 border-b text-left">Tài Chính</th>
+                                <th class="py-2 px-4 border-b text-left">Điểm Tiếng Anh</th>
+                                <th class="py-2 px-4 border-b text-left">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visaTableBody">
+                            <!-- Dữ liệu sẽ được điền vào đây -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Form thêm/sửa Visa -->
+            <div id="visaForm" class="hidden mt-8 border p-6 rounded-lg bg-gray-50">
+                <h2 id="formTitle" class="text-xl font-semibold text-gray-700 mb-4">Thêm Visa Mới</h2>
+                <form id="addEditVisaForm" class="space-y-4">
+                    <input type="hidden" id="idVisa" name="idVisa">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="tenVisa" class="block text-sm font-medium text-gray-700 mb-1">Tên Visa</label>
+                            <input type="text" id="tenVisa" name="tenVisa" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="loaiVisa" class="block text-sm font-medium text-gray-700 mb-1">Loại Visa</label>
+                            <input type="text" id="loaiVisa" name="loaiVisa" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="doTuoi" class="block text-sm font-medium text-gray-700 mb-1">Độ tuổi phù hợp (các số cách nhau bằng dấu phẩy)</label>
+                            <input type="text" id="doTuoi" name="doTuoi" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="nuocDuHoc" class="block text-sm font-medium text-gray-700 mb-1">Nước du học</label>
+                            <input type="text" id="nuocDuHoc" name="nuocDuHoc" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="taiChinh" class="block text-sm font-medium text-gray-700 mb-1">Tài chính phù hợp trên năm (VNĐ)</label>
+                            <input type="number" id="taiChinh" name="taiChinh" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="diemTiengAnh" class="block text-sm font-medium text-gray-700 mb-1">Điểm tiếng Anh</label>
+                            <input type="number" id="diemTiengAnh" name="diemTiengAnh" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="thongTinChiTiet" class="block text-sm font-medium text-gray-700 mb-1">Thông tin chi tiết</label>
+                        <textarea id="thongTinChiTiet" name="thongTinChiTiet" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="baner" class="block text-sm font-medium text-gray-700 mb-1">Baner</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="file" id="banerFile" accept="image/*" class="hidden">
+                            <button type="button" id="selectBanerButton" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md">Chọn ảnh</button>
+                            <span id="selectedFileName" class="text-gray-600">Chưa chọn file</span>
+                        </div>
+                        <input type="hidden" id="banerUrl" name="banerUrl">
+                        <div id="previewContainer" class="mt-4 hidden">
+                            <img id="imagePreview" src="" alt="Preview" class="max-h-40 border rounded-md">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" id="cancelButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            Hủy
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            Lưu
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Thông báo lỗi khi không thể lấy dữ liệu -->
+            <div id="errorMessage" class="hidden mt-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                Không thể kết nối đến máy chủ. Vui lòng thử lại sau.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lưu trữ dữ liệu visa toàn cục
+        let allVisaData = [];
+        let isEditing = false;
+        
+        // Upload ảnh lên Cloudinary
+        const uploadToCloudinary = async (base64Image) => {
+            const CLOUDINARY_CLOUD_NAME = 'djtkoancg';
+            const CLOUDINARY_UPLOAD_PRESET = 'Wowsqzdjfhs8';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', base64Image);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                
+                const response = await axios.post(
+                    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    }
+                );
+                
+                if (!response.data || !response.data.secure_url) {
+                    throw new Error('Invalid response from Cloudinary');
+                }
+                return response.data.secure_url;
+            } catch (error) {
+                console.error('Cloudinary upload error:', error.response?.data || error);
+                throw new Error('Lỗi khi upload ảnh: ' + (error.response?.data?.message || error.message));
+            }
+        };
+        
+        // Khởi tạo TinyMCE
+        function initTinyMCE() {
+            tinymce.init({
+                selector: '#thongTinChiTiet',
+                height: 300,
+                menubar: false,
+                plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                ],
+                toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | help',
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+            });
+        }
+        
+        // Hàm lấy dữ liệu từ API
+        async function fetchVisaData() {
+            try {
+                const response = await fetch('https://www.appsheet.com/api/v2/apps/8d9567ef-18fc-49cd-8464-aa8bd6dd1f70/tables/Visa/Action', {
+                    method: 'POST',
+                    headers: {
+                        'applicationAccessKey': 'V2-VMoM8-xcbox-cczF1-dGuuQ-1XCTP-yxbUB-cyukd-oXHJY',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "Action": "Find",
+                        "Properties": {
+                            "Locale": "vi-VN",
+                            "Timezone": "Asia/Ho_Chi_Minh"
+                        },
+                        "Rows": []
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Lỗi khi lấy dữ liệu visa');
+                }
+                
+                allVisaData = await response.json();
+                
+                // Hiển thị danh sách và ẩn loading
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('visaList').classList.remove('hidden');
+                document.getElementById('addButtonContainer').classList.remove('hidden');
+                
+                // Hiển thị danh sách visa
+                displayVisaList();
+                
+                // Khởi tạo TinyMCE
+                initTinyMCE();
+                
+            } catch (error) {
+                console.error('Lỗi:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('errorMessage').classList.remove('hidden');
+            }
+        }
+        
+        // Hiển thị danh sách visa
+        function displayVisaList() {
+            const tableBody = document.getElementById('visaTableBody');
+            tableBody.innerHTML = '';
+            
+            allVisaData.forEach(visa => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b">${visa.IDVISA || 'N/A'}</td>
+                    <td class="py-2 px-4 border-b">${visa['TÊN VISA'] || 'N/A'}</td>
+                    <td class="py-2 px-4 border-b">${visa['LOẠI VISA'] || 'N/A'}</td>
+                    <td class="py-2 px-4 border-b">${visa['NƯỚC DU HỌC'] || 'N/A'}</td>
+                    <td class="py-2 px-4 border-b">${Number(visa['TÀI CHÍNH PHÙ HỢP TRÊN NĂM']).toLocaleString('vi-VN')} VNĐ</td>
+                    <td class="py-2 px-4 border-b">${visa['ĐIỂM TIẾNG ANH'] || 'N/A'}</td>
+                    <td class="py-2 px-4 border-b">
+                        <button data-id="${visa.IDVISA}" class="edit-button bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-2 rounded-md mr-2">Sửa</button>
+                        <button data-id="${visa.IDVISA}" class="delete-button bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md">Xóa</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Thêm sự kiện cho các nút
+            document.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const visaId = this.getAttribute('data-id');
+                    editVisa(visaId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const visaId = this.getAttribute('data-id');
+                    deleteVisa(visaId);
+                });
+            });
+        }
+        
+        // Xử lý sự kiện click nút thêm mới
+        document.getElementById('addVisaButton').addEventListener('click', function() {
+            isEditing = false;
+            document.getElementById('formTitle').textContent = 'Thêm Visa Mới';
+            document.getElementById('addEditVisaForm').reset();
+            document.getElementById('idVisa').value = generateUUID();
+            document.getElementById('previewContainer').classList.add('hidden');
+            document.getElementById('selectedFileName').textContent = 'Chưa chọn file';
+            document.getElementById('banerUrl').value = '';
+            
+            // Xóa nội dung TinyMCE
+            if (tinymce.get('thongTinChiTiet')) {
+                tinymce.get('thongTinChiTiet').setContent('');
+            }
+            
+            // Hiển thị form
+            document.getElementById('visaForm').classList.remove('hidden');
+            document.getElementById('visaList').classList.add('hidden');
+            document.getElementById('addButtonContainer').classList.add('hidden');
+        });
+        
+        // Xử lý sự kiện click nút hủy
+        document.getElementById('cancelButton').addEventListener('click', function() {
+            document.getElementById('visaForm').classList.add('hidden');
+            document.getElementById('visaList').classList.remove('hidden');
+            document.getElementById('addButtonContainer').classList.remove('hidden');
+        });
+        
+        // Xử lý sự kiện chọn file
+        document.getElementById('selectBanerButton').addEventListener('click', function() {
+            document.getElementById('banerFile').click();
+        });
+        
+        document.getElementById('banerFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('selectedFileName').textContent = file.name;
+                
+                // Tạo preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('previewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Hàm sửa visa
+        function editVisa(visaId) {
+            isEditing = true;
+            const visa = allVisaData.find(v => v.IDVISA === visaId);
+            
+            if (visa) {
+                document.getElementById('formTitle').textContent = 'Chỉnh Sửa Visa';
+                document.getElementById('idVisa').value = visa.IDVISA;
+                document.getElementById('tenVisa').value = visa['TÊN VISA'] || '';
+                document.getElementById('loaiVisa').value = visa['LOẠI VISA'] || '';
+                document.getElementById('doTuoi').value = visa['ĐỘ TUỔI PHÙ HỢP'] || '';
+                document.getElementById('nuocDuHoc').value = visa['NƯỚC DU HỌC'] || '';
+                document.getElementById('taiChinh').value = visa['TÀI CHÍNH PHÙ HỢP TRÊN NĂM'] || '';
+                document.getElementById('diemTiengAnh').value = visa['ĐIỂM TIẾNG ANH'] || '';
+                
+                // Cập nhật TinyMCE
+                setTimeout(() => {
+                    if (tinymce.get('thongTinChiTiet')) {
+                        tinymce.get('thongTinChiTiet').setContent(visa['THÔNG TIN CHI TIẾT'] || '');
+                    }
+                }, 100);
+                
+                // Cập nhật Baner
+                document.getElementById('banerUrl').value = visa['BANER'] || '';
+                
+                if (visa['BANER']) {
+                    document.getElementById('imagePreview').src = visa['BANER'];
+                    document.getElementById('previewContainer').classList.remove('hidden');
+                    document.getElementById('selectedFileName').textContent = 'Ảnh đã tải lên';
+                } else {
+                    document.getElementById('previewContainer').classList.add('hidden');
+                    document.getElementById('selectedFileName').textContent = 'Chưa chọn file';
+                }
+                
+                // Hiển thị form
+                document.getElementById('visaForm').classList.remove('hidden');
+                document.getElementById('visaList').classList.add('hidden');
+                document.getElementById('addButtonContainer').classList.add('hidden');
+            }
+        }
+        
+        // Hàm xóa visa
+        function deleteVisa(visaId) {
+            if (confirm('Bạn có chắc chắn muốn xóa visa này?')) {
+                // Thực hiện xóa visa từ API
+                console.log('Xóa visa có ID:', visaId);
+                // Thêm code để xóa visa từ API tại đây
+            }
+        }
+        
+        // Xử lý sự kiện submit form
+        document.getElementById('addEditVisaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                // Hiển thị loading
+                document.getElementById('visaForm').classList.add('hidden');
+                document.getElementById('loading').classList.remove('hidden');
+                
+                // Upload ảnh trước nếu có
+                let banerUrl = document.getElementById('banerUrl').value;
+                const banerFile = document.getElementById('banerFile').files[0];
+                
+                if (banerFile) {
+                    const reader = new FileReader();
+                    
+                    await new Promise((resolve, reject) => {
+                        reader.onload = async function(e) {
+                            try {
+                                banerUrl = await uploadToCloudinary(e.target.result);
+                                resolve();
+                            } catch (error) {
+                                reject(error);
+                            }
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(banerFile);
+                    });
+                }
+                
+                // Lấy nội dung HTML từ TinyMCE
+                const thongTinChiTietHtml = tinymce.get('thongTinChiTiet') ? tinymce.get('thongTinChiTiet').getContent() : '';
+                
+                // Tạo dữ liệu để gửi lên API
+                const visaData = {
+                    "IDVISA": document.getElementById('idVisa').value,
+                    "TÊN VISA": document.getElementById('tenVisa').value,
+                    "LOẠI VISA": document.getElementById('loaiVisa').value,
+                    "ĐỘ TUỔI PHÙ HỢP": document.getElementById('doTuoi').value,
+                    "NƯỚC DU HỌC": document.getElementById('nuocDuHoc').value,
+                    "TÀI CHÍNH PHÙ HỢP TRÊN NĂM": document.getElementById('taiChinh').value,
+                    "ĐIỂM TIẾNG ANH": document.getElementById('diemTiengAnh').value,
+                    "THÔNG TIN CHI TIẾT": thongTinChiTietHtml, // Lưu nội dung HTML từ TinyMCE
+                    "BANER": banerUrl
+                };
+                
+                // Gửi dữ liệu lên API
+                const response = await fetch('https://www.appsheet.com/api/v2/apps/8d9567ef-18fc-49cd-8464-aa8bd6dd1f70/tables/Visa/Action', {
+                    method: 'POST',
+                    headers: {
+                        'applicationAccessKey': 'V2-VMoM8-xcbox-cczF1-dGuuQ-1XCTP-yxbUB-cyukd-oXHJY',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "Action": "Add",  // Thay đổi từ Find thành Add
+                        "Properties": {
+                            "Locale": "vi-VN",
+                            "Timezone": "Asia/Ho_Chi_Minh"
+                        },
+                        "Rows": [visaData]  // Gửi dữ liệu theo định dạng yêu cầu
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Lỗi khi lưu dữ liệu visa');
+                }
+                
+                // Tải lại dữ liệu
+                await fetchVisaData();
+                
+                // Hiển thị thông báo thành công
+                alert(isEditing ? 'Cập nhật visa thành công!' : 'Thêm visa mới thành công!');
+                
+                // Quay lại danh sách
+                document.getElementById('visaForm').classList.add('hidden');
+                document.getElementById('visaList').classList.remove('hidden');
+                document.getElementById('addButtonContainer').classList.remove('hidden');
+                document.getElementById('loading').classList.add('hidden');
+                
+            } catch (error) {
+                console.error('Lỗi khi lưu visa:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('visaForm').classList.remove('hidden');
+                alert('Lỗi khi lưu visa: ' + error.message);
+            }
+        });
+        
+        // Tạo UUID ngẫu nhiên
+        function generateUUID() {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            ).substring(0, 8);
+        }
+        
+        // Tải dữ liệu khi trang được tải
+        window.addEventListener('DOMContentLoaded', fetchVisaData);
+    </script>
+</body>
+</html>
